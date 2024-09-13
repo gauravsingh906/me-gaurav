@@ -1,0 +1,179 @@
+import Typography from "@components/Typography";
+import Image from "next/image";
+import gauravImg from "@public/gaurav.jpg";
+import ibmImg from "@public/ibm.png"
+import cnImg from "@public/cn.png"
+import cn2Img from "@public/cn2.png"
+import Link from "next/link";
+import { Metadata } from "next";
+import Button from "@components/Button";
+import AboutContent from ".//AboutContent.md";
+import { remark } from "remark";
+
+import html from "remark-html";
+import WorkExperience from "@components/WorkExperience";
+
+export const metadata: Metadata = {
+  title: "About | Gaurav - Full Stack Developer",
+};
+
+
+async function getExperienceData() {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ??
+    `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+
+  const res = await fetch(`${baseUrl}/api/experience`, {
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) {
+    // This will activate the closest `error.js` Error Boundary
+    throw new Error("Failed to fetch experience data");
+  }
+
+  return res.json();
+}
+
+const About = async () => {
+  const experienceData = await getExperienceData();
+
+  const processedContent = await remark().use(html).process(AboutContent);
+  const contentHtml = processedContent.toString();
+
+  return (
+    <main className="container">
+      <div className="flex flex-col gap-2  my-12">
+        <Typography size="h3/semi-bold" className="!text-3xl sm:text-4xl">
+          A litle bit about me
+        </Typography>
+        <Typography size="body2/normal" variant="secondary">
+          Who am i and what i do
+        </Typography>
+      </div>
+      <span className="w-full block border border-primary-300 absolute right-0"></span>
+
+      <section className="flex flex-col sm:flex-row gap-4  mt-20 my-4">
+        {/* image on top in mobile view */}
+        <div className="block sm:hidden w-48 h-fit bg-primary-800 rounded-3xl">
+          <Image
+            src={gauravImg}
+            alt="onam"
+            width={300}
+            height={200}
+            quality={100}
+            className="w-full h-full object-cover rounded-3xl"
+            style={{ filter: "drop-shadow(2px 2px 5px gray)" }}
+          />
+        </div>
+        <div className="flex flex-col gap-6 sm:w-3/4">
+          <div
+            className="prose dark:prose-invert"
+            dangerouslySetInnerHTML={{ __html: contentHtml }}
+          />
+          <div className="flex flex-col gap-2">
+            <Typography size="body1/semi-bold" className="uppercase">
+              Certificates
+            </Typography>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Link
+                href="https://certificate.codingninjas.com/view/f8f5b3e004e12cea"
+                className="relative flex group"
+                target="_blank"
+              >
+                <div className="w-full h-fit">
+                  <Image
+                    src={cnImg}
+                    alt="Coding-ninjas"
+                    width={300}
+                    height={200}
+                    quality={100}
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                </div>
+                <span className="text-primary-50 underline absolute w-full h-full justify-center items-center bg-primary-900/60 hidden group-hover:flex">
+                  View details
+                </span>
+              </Link>
+              <Link
+                href="https://drive.google.com/file/d/1zGXAoPdZjjpkGKHKg_Tr3W6MDZkfV3p0/view?usp=drive_link"
+                className="relative flex group"
+                target="_blank"
+              >
+                <div className="w-full h-fit">
+                  <Image
+                    src={ibmImg}
+                    alt="Coding-ninjas"
+                    width={300}
+                    height={200}
+                    quality={100}
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                </div>
+                <span className="text-primary-50 underline absolute w-full h-full justify-center items-center bg-primary-900/60 hidden group-hover:flex">
+                  View details
+                </span>
+              </Link>
+              <Link
+                href="https://certificate.codingninjas.com/view/8fe4a9b45fbb30b3"
+                className="relative flex group"
+                target="_blank"
+              >
+                <div className="w-full h-fit">
+                  <Image
+                    src={cn2Img}
+                    alt="Coding-ninjas"
+                    width={300}
+                    height={200}
+                    quality={100}
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                </div>
+                <span className="text-primary-50 underline absolute w-full h-full justify-center items-center bg-primary-900/60 hidden group-hover:flex">
+                  View details
+                </span>
+              </Link>
+            </div>
+          </div>
+          <WorkExperience experienceData={experienceData} />
+        </div>
+        <div className="flex flex-col gap-8 items-center">
+          {/* image on right side */}
+          <div className="hidden sm:block w-72 h-fit bg-primary-800 rounded-3xl">
+            <Image
+              src={gauravImg}
+              alt="gaurav"
+              width={300}
+              height={200}
+              quality={100}
+              className="w-full h-full object-cover rounded-3xl"
+              style={{ filter: "drop-shadow(2px 2px 5px gray)" }}
+            />
+          </div>
+          <Button
+            link="/contact"
+            title="connect"
+            className="items-center gap-2 !w-full sm:!w-fit"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className="w-6 h-6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+              />
+            </svg>
+            Get in touch
+          </Button>
+        </div>
+      </section>
+    </main>
+  );
+};
+
+export default About;
