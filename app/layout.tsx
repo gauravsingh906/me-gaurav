@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   ],
 
   openGraph: {
-    images: "/logo.webp",
+    images: "/favicon1.png",
   },
 };
 
