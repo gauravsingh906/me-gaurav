@@ -1,63 +1,82 @@
+'use client'; // Ensures the component is rendered only on the client side
+
+import { useEffect, useState } from 'react';
 import Typography from "@components/Typography";
 import Image from "next/image";
 import gauravImg from "@public/gaurav.jpg";
-import ibmImg from "@public/ibm.png"
-import cnImg from "@public/cn.png"
-import cn2Img from "@public/cn2.png"
+import ibmImg from "@public/ibm.png";
+import cnImg from "@public/cn.png";
+import cn2Img from "@public/cn2.png";
 import Link from "next/link";
-import { Metadata } from "next";
 import Button from "@components/Button";
 import AboutContent from ".//AboutContent.md";
 import { remark } from "remark";
-
 import html from "remark-html";
 import WorkExperience from "@components/WorkExperience";
+import Loading from '@components/Loading';
 
-export const metadata: Metadata = {
-  title: "About | Gaurav - Full Stack Developer",
-};
-
-
-async function getExperienceData() {
+async function fetchExperienceData() {
   const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+    process.env.NEXT_PUBLIC_BASE_URL ?? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
 
   const res = await fetch(`${baseUrl}/api/experience`, {
     next: { revalidate: 3600 },
   });
+
   if (!res.ok) {
-    // This will activate the closest `error.js` Error Boundary
     throw new Error("Failed to fetch experience data");
   }
 
   return res.json();
 }
 
-const About = async () => {
-  const experienceData = await getExperienceData();
+const About = () => {
+  const [experienceData, setExperienceData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [contentHtml, setContentHtml] = useState<string>("");
 
-  const processedContent = await remark().use(html).process(AboutContent);
-  const contentHtml = processedContent.toString();
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch experience data
+        const data = await fetchExperienceData();
+        setExperienceData(data);
+
+        // Process AboutContent Markdown
+        const processedContent = await remark().use(html).process(AboutContent);
+        setContentHtml(processedContent.toString());
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <Loading></Loading>
+  if (error) return <Typography>{error}</Typography>;
 
   return (
     <main className="container">
-      <div className="flex flex-col gap-2  my-12">
+      <div className="flex flex-col gap-2 my-12">
         <Typography size="h3/semi-bold" className="!text-3xl sm:text-4xl">
-          A litle bit about me
+          A little bit about me
         </Typography>
         <Typography size="body2/normal" variant="secondary">
-          Who am i and what i do
+          Who am I and what I do
         </Typography>
       </div>
       <span className="w-full block border border-primary-300 absolute right-0"></span>
 
-      <section className="flex flex-col sm:flex-row gap-4  mt-20 my-4">
-        {/* image on top in mobile view */}
+      <section className="flex flex-col sm:flex-row gap-4 mt-20 my-4">
+        {/* Image on top in mobile view */}
         <div className="block sm:hidden w-48 h-fit bg-primary-800 rounded-3xl">
           <Image
             src={gauravImg}
-            alt="onam"
+            alt="Gaurav"
             width={300}
             height={200}
             quality={100}
@@ -83,7 +102,7 @@ const About = async () => {
                 <div className="w-full h-fit">
                   <Image
                     src={cnImg}
-                    alt="Coding-ninjas"
+                    alt="Coding Ninjas Certificate"
                     width={300}
                     height={200}
                     quality={100}
@@ -102,7 +121,7 @@ const About = async () => {
                 <div className="w-full h-fit">
                   <Image
                     src={ibmImg}
-                    alt="Coding-ninjas"
+                    alt="IBM Certificate"
                     width={300}
                     height={200}
                     quality={100}
@@ -121,7 +140,7 @@ const About = async () => {
                 <div className="w-full h-fit">
                   <Image
                     src={cn2Img}
-                    alt="Coding-ninjas"
+                    alt="Coding Ninjas Certificate"
                     width={300}
                     height={200}
                     quality={100}
@@ -137,11 +156,11 @@ const About = async () => {
           <WorkExperience experienceData={experienceData} />
         </div>
         <div className="flex flex-col gap-8 items-center">
-          {/* image on right side */}
+          {/* Image on right side */}
           <div className="hidden sm:block w-72 h-fit bg-primary-800 rounded-3xl">
             <Image
               src={gauravImg}
-              alt="gaurav"
+              alt="Gaurav"
               width={300}
               height={200}
               quality={100}
@@ -177,3 +196,4 @@ const About = async () => {
 };
 
 export default About;
+

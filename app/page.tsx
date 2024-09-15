@@ -1,29 +1,51 @@
-import Typography from "@components/Typography";
+'use client'; // Ensures the component is rendered only on the client side
 
+import { useEffect, useState } from 'react';
+import Typography from "@components/Typography";
 import Button from "@components/Button";
 import Card from "@components/Card";
 import aboutVector from "@public/aboutVector.png";
 import techStack from "@public/techStack.png";
+import { TechSpin } from "@components/TechSpin";
 import { TProject } from "./dashboard/project/project";
-import { TechSpin } from "./about/TechSpin";
-async function getProjectData() {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+import Loading from '@components/Loading';
 
-  const res = await fetch(
-    `${baseUrl}/api/project?search=Anonymous-review&search=Dev-Dialog`,
-    { next: { revalidate: 3600 }, }
-  );
+async function fetchProjectData(): Promise<TProject[]> {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ?? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+
+  const res = await fetch(`${baseUrl}/api/project`, {
+    next: { revalidate: 3600 },
+  });
+
   if (!res.ok) {
-    // This will activate the closest `error.js` Error Boundary
     throw new Error("Failed to fetch project data");
   }
 
   return res.json();
 }
 
-const Home = async () => {
+const Home = () => {
+  const [projectsData, setProjectsData] = useState<TProject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch data on client side
+    const fetchData = async () => {
+      try {
+        const data = await fetchProjectData();
+        setProjectsData(data);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const widgetCards = [
     {
       id: "1",
@@ -41,7 +63,9 @@ const Home = async () => {
     },
   ];
 
-  const projectsData: TProject[] = await getProjectData();
+  if (loading) return <Loading></Loading>
+  if (error) return <Typography>{error}</Typography>;
+
   return (
     <main className="container flex flex-col gap-16">
       {/* hero section */}
@@ -70,7 +94,7 @@ const Home = async () => {
               className="absolute -top-8 right-0 sm:w-[300px] sm:h-[350px]  lg:w-[400px] lg:h-[500px] rounded-b-[20%] cursor-pointer transition ease-in-out duration-500 hover:scale-110"
               style={{ filter: "drop-shadow(0px 11px 27px gray)" }}
             >
-              <TechSpin></TechSpin>
+              <TechSpin />
             </div>
           </div>
         </div>
@@ -87,7 +111,7 @@ const Home = async () => {
         <Typography size="h3/semi-bold">Selected Work</Typography>
         <div className="flex flex-col gap-8">
           {projectsData.length ? (
-            projectsData.map((data, index) => (
+            projectsData.map((data) => (
               <Card
                 key={data._id}
                 title={data.title}

@@ -1,56 +1,63 @@
-import { TProject } from "@app/dashboard/project/project";
-import Card from "@components/Card";
+'use client'; // Ensures the component is rendered only on the client side
+
+import { useEffect, useState } from 'react';
 import Typography from "@components/Typography";
-import { Metadata } from "next";
+import Card from "@components/Card";
+import { TProject } from "@app/dashboard/project/project";
+import Loading from '@components/Loading';
 
-export const metadata: Metadata = {
-  title: "Projects | Gaurav - Full Stack Developer",
-};
-
-async function getProfessionalProjectData() {
+// Data fetching functions
+async function fetchProjects(tag: string): Promise<TProject[]> {
   const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+    process.env.NEXT_PUBLIC_BASE_URL ?? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
 
-  const res = await fetch(`${baseUrl}/api/project?tag=professional`, {
+  const res = await fetch(`${baseUrl}/api/project?tag=${tag}`, {
     next: { revalidate: 3600 },
   });
   if (!res.ok) {
-    // This will activate the closest `error.js` Error Boundary
-    throw new Error("Failed to fetch professional project data");
-  }
-
-  return res.json();
-}
-async function getPersonalProjectData() {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-
-  const res = await fetch(`${baseUrl}/api/project?tag=personal`, {
-    next: { revalidate: 3600 },
-  });
-  if (!res.ok) {
-    // This will activate the closest `error.js` Error Boundary
-    throw new Error("Failed to fetch project data");
+    throw new Error(`Failed to fetch ${tag} project data`);
   }
 
   return res.json();
 }
 
-const Projects = async () => {
-  const personalProjectsData: TProject[] = await getPersonalProjectData();
-  const professionalProjectsData: TProject[] =
-    await getProfessionalProjectData();
+const Projects = () => {
+  const [personalProjectsData, setPersonalProjectsData] = useState<TProject[]>([]);
+  const [professionalProjectsData, setProfessionalProjectsData] = useState<TProject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch data on client side
+    const fetchData = async () => {
+      try {
+        const [personalData, professionalData] = await Promise.all([
+          fetchProjects('personal'),
+          fetchProjects('professional')
+        ]);
+        setPersonalProjectsData(personalData);
+        setProfessionalProjectsData(professionalData);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <Loading></Loading>
+  if (error) return <Typography>{error}</Typography>;
 
   return (
     <main className="container">
-      <div className="flex flex-col gap-2  my-12">
+      <div className="flex flex-col gap-2 my-12">
         <Typography size="h3/semi-bold" className="!text-3xl sm:text-4xl">
           Projects
         </Typography>
         <Typography size="body2/normal" variant="secondary">
-          Projects, I’ve worked on
+          Projects I’ve worked on
         </Typography>
       </div>
       <span className="w-full block border border-primary-300 absolute right-0"></span>
@@ -65,10 +72,9 @@ const Projects = async () => {
             professionalProjectsData
               .sort(
                 (a, b) =>
-                  new Date(b.createdAt).getTime() -
-                  Number(new Date(a.createdAt).getTime())
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               )
-              .map((data, index) => (
+              .map((data) => (
                 <Card
                   key={data._id}
                   title={data.title}
@@ -98,9 +104,9 @@ const Projects = async () => {
             personalProjectsData
               .sort(
                 (a, b) =>
-                  Number(new Date(b.createdAt)) - Number(new Date(a.createdAt))
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               )
-              .map((data, index) => (
+              .map((data) => (
                 <Card
                   key={data._id}
                   title={data.title}
