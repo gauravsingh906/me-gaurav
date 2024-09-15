@@ -1,50 +1,116 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@utils/db";
 import Project from "@models/Project";
+import { v2 as cloudinary } from "cloudinary";
+import { Readable } from "stream";
 
-// get all project list
-export const GET = async (req: NextRequest) => {
-  const searchQuery = req.nextUrl.searchParams.getAll("search");
-  const tag = req.nextUrl.searchParams.get("tag");
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-  try {
-    await connectDB();
-    if (searchQuery?.length) {
-      const project: object[] = await Project.find({
-        title: { $in: searchQuery },
-      });
-      return new NextResponse(JSON.stringify(project), { status: 200 });
-    } else if (tag) {
-      const project: object[] = await Project.find({
-        tag: tag,
-      });
-      return new NextResponse(JSON.stringify(project), { status: 200 });
-    } else {
-      const project: object[] = await Project.find();
-      return new NextResponse(JSON.stringify(project), { status: 200 });
-    }
-  } catch (error: unknown) {
-    console.error(error instanceof Error ? error.message : error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
+// Convert buffer to readable stream
+const bufferToStream = (buffer: Buffer) => {
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+  return stream;
 };
 
-// add new project
-export const POST = async (req: Request) => {
+export async function GET(req: NextRequest) {
   try {
+    const searchQuery = req.nextUrl.searchParams.getAll("search");
+    const tag = req.nextUrl.searchParams.get("tag");
+
+    await connectDB();
+
+    let projects;
+
+    if (searchQuery.length) {
+      projects = await Project.find({
+        title: { $in: searchQuery },
+      });
+    } else if (tag) {
+      projects = await Project.find({
+        tag: tag,
+      });
+    } else {
+      projects = await Project.find();
+    }
+
+    return NextResponse.json(projects, { status: 200 });
+
+  } catch (error: unknown) {
+    console.error(error instanceof Error ? error.message : error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    if (!req.headers.get('content-type')?.startsWith('multipart/form-data')) {
+      return NextResponse.json({ message: "Invalid content type", success: false }, { status: 400 });
+    }
+
+    // Parse form data
+    const formData = await req.formData();
+
+    // Extract fields from form data
     const {
-      logo,
       title,
       description,
       techUsed,
-      thumbnail,
       githubLink,
       demoLink,
       tag,
-    } = await req.json();
+    } = Object.fromEntries(formData.entries());
+
+    // Handle file uploads
+    const logoFile = formData.get('logo') as any;
+    const thumbnailFile = formData.get('thumbnail') as any;
+
+    let logoPath = '';
+    let thumbnailPath = '';
+
+    if (logoFile) {
+      const logoByteData = await logoFile.arrayBuffer();
+      const logoBuffer = Buffer.from(logoByteData);
+
+      const uploadResult = await new Promise<string>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream({ folder: "projects" }, (error, result) => {
+          if (error) {
+            reject(new Error('Cloudinary upload error'));
+          } else {
+            resolve(result?.secure_url || '');
+          }
+        });
+
+        bufferToStream(logoBuffer).pipe(uploadStream);
+      });
+
+      logoPath = uploadResult;
+    }
+
+    if (thumbnailFile) {
+      const thumbnailByteData = await thumbnailFile.arrayBuffer();
+      const thumbnailBuffer = Buffer.from(thumbnailByteData);
+
+      const uploadResult = await new Promise<string>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream({ folder: "projects" }, (error, result) => {
+          if (error) {
+            reject(new Error('Cloudinary upload error'));
+          } else {
+            resolve(result?.secure_url || '');
+          }
+        });
+
+        bufferToStream(thumbnailBuffer).pipe(uploadStream);
+      });
+
+      thumbnailPath = uploadResult;
+    }
 
     await connectDB();
 
@@ -52,20 +118,20 @@ export const POST = async (req: Request) => {
       title,
       description,
       techUsed,
-      logo,
-      thumbnail,
+      logo: logoPath,
+      thumbnail: thumbnailPath,
       githubLink,
       demoLink,
       tag,
     });
+
     const addProject = await project.save();
     return NextResponse.json(addProject, { status: 201 });
+
   } catch (error: unknown) {
-    console.error(error instanceof Error ? error.message : error);
-    const status =
-      error instanceof Error && error.name === "ValidationError" ? 422 : 500;
-    const message =
-      error instanceof Error ? error.message : "Internal server error";
+    console.error("Error processing request:", error);
+    const status = error instanceof Error && error.name === "ValidationError" ? 422 : 500;
+    const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json({ error: message }, { status });
   }
-};
+}

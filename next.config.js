@@ -26,6 +26,11 @@ const nextConfig = {
         hostname: "certificate.codingninjas.com",
         port: "",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        port: "",
+      },
     ],
   },
 };

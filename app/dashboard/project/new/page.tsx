@@ -1,10 +1,15 @@
 "use client";
+import { useRouter } from "next/navigation";
+
+import { ChangeEvent, useRef, useState } from "react";
 import AddEditForm from "@components/AddEditForm";
 import Typography from "@components/Typography";
-import { ChangeEvent, useRef, useState } from "react";
+import { TProject } from "@app/dashboard/project/project";
 
 const AddProject = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
   const [statusMessage, setStatusMessage] = useState<{
     variant: "error" | "success";
     message: string;
@@ -15,63 +20,47 @@ const AddProject = () => {
     e.preventDefault();
     setIsLoading(true);
     setStatusMessage(null);
+
     try {
       if (formRef.current) {
         const formData = new FormData(formRef.current);
-        const formDataObj = Object.fromEntries(formData.entries());
-        const {
-          title,
-          description,
-          techUsed,
-          thumbnail,
-          logo,
-          githubLink,
-          demoLink,
-          tag,
-        } = formDataObj;
 
-        const res = await fetch(`/api/project`, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            title,
-            description,
-            techUsed,
-            thumbnail,
-            logo,
-            githubLink,
-            demoLink,
-            tag,
-          }),
+        const res = await fetch('/api/project', {
+          method: 'POST',
+          body: formData,
         });
+
         if (!res.ok) {
           throw new Error("Failed to add project");
         }
+
+        const addedProject: TProject = await res.json();
+
         setStatusMessage({
           variant: "success",
-          message: "Project added successfully",
+          message: `Project "${addedProject.title}" added successfully`,
         });
-        e.target?.reset();
+
+        formRef.current.reset();
+        router.push('/dashboard/project')
       }
     } catch (error) {
-      console.log(error);
-      if (error instanceof Error) {
-        setStatusMessage({ variant: "error", message: error.message });
-      }
+      console.error(error);
+      setStatusMessage({
+        variant: "error",
+        message: error instanceof Error ? error.message : "An unknown error occurred",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="container ">
+    <main className="container">
       <Typography size="h5/semi-bold" className="capitalize text-center">
         Add New Project
       </Typography>
-      <div className="flex justify-center ">
+      <div className="flex justify-center">
         <AddEditForm
           isLoading={isLoading}
           actionText="Add Project"

@@ -7,6 +7,7 @@ import Typography from "./Typography";
 import { ChangeEvent, RefObject, useState } from "react";
 import Select from "./Select";
 import { TExperience } from "@app/dashboard/experience/page";
+import Image from "next/image";
 
 type TAddEditForm = {
   isLoading: boolean;
@@ -38,13 +39,36 @@ const AddEditForm = ({
       : false;
 
   const [isChecked, setIsChecked] = useState(defaultChecked);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (e.target.name === "logo") {
+          setLogoPreview(reader.result as string);
+        } else if (e.target.name === "thumbnail") {
+          setThumbnailPreview(reader.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
+
+
+
+
+
     <div className="w-full my-6 max-w-xl p-4 bg-primary-100 dark:bg-primary-900 shadow-md rounded-lg">
       <form
-        className="w-full flex flex-col gap-4 "
+        className="w-full flex flex-col gap-4"
         onSubmit={handleSubmit}
         ref={formRef}
+        encType="multipart/form-data"
       >
         {variant === "project" ? (
           <div className="flex flex-col gap-4">
@@ -78,25 +102,38 @@ const AddEditForm = ({
               }
               required
             />
-            <Input
-              type="text"
-              name="logo"
-              label="Logo"
-              placeholder="Logo (link only)"
-              defaultValue={
-                formData && "logo" in formData ? formData?.logo : ""
-              }
-            />
-            <Input
-              type="text"
-              name="thumbnail"
-              label="Thumbnail"
-              placeholder="Thumbnail (link only)"
-              defaultValue={
-                formData && "thumbnail" in formData ? formData?.thumbnail : ""
-              }
-              required
-            />
+            <div>
+              <label htmlFor="logo" className="block mb-2">Logo</label>
+              <input
+                type="file"
+                id="logo"
+                name="logo"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full p-2 border rounded"
+              />
+              {logoPreview && (
+                <Image src={logoPreview} alt="Logo preview" width={30}
+                  height={30} className="mt-2 w-32 h-32 object-contain" />
+              )}
+            </div>
+            <div>
+              <label htmlFor="thumbnail" className="block mb-2">Thumbnail</label>
+              <input
+                type="file"
+                id="thumbnail"
+                name="thumbnail"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full p-2 border rounded"
+                required
+              />
+              {thumbnailPreview && (
+                <Image src={thumbnailPreview}
+                  width={30}
+                  height={30} alt="Thumbnail preview" className="mt-2 w-32 h-32 object-contain" />
+              )}
+            </div>
             <Input
               type="text"
               name="githubLink"

@@ -21,10 +21,14 @@ const Projects = () => {
     setIsProjectsLoading(true);
     try {
       const res = await fetch(`/api/project`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch projects");
+      }
       const data = await res.json();
       setProjectsData(data);
     } catch (error) {
       console.log(error);
+      setErrorMessage("Failed to load projects");
     } finally {
       setIsProjectsLoading(false);
     }
@@ -43,7 +47,7 @@ const Projects = () => {
       const res = await fetch(`/api/project/${selectedProjectId}`, {
         method: "DELETE",
         headers: {
-          "content-type": "application/json",
+          "Content-Type": "application/json",
         },
         credentials: "include",
       });
@@ -79,7 +83,7 @@ const Projects = () => {
                     Number(new Date(b.createdAt)) -
                     Number(new Date(a.createdAt))
                 )
-                .map((project, index) => (
+                .map((project) => (
                   <Card
                     key={project._id}
                     title={project.title}
@@ -88,7 +92,8 @@ const Projects = () => {
                     actionText="Edit"
                     actionLink={`/dashboard/project/${project._id}`}
                     handleSecondaryAction={() => {
-                      setIsDeletePopup(true), setSelectedProjectId(project._id);
+                      setIsDeletePopup(true);
+                      setSelectedProjectId(project._id);
                     }}
                     secondaryActiontext="Delete"
                     projectLogoSrc={project.logo}
@@ -102,7 +107,7 @@ const Projects = () => {
           </div>
         ) : (
           <div className="h-40">
-            <Loading loadingText="loading" />
+            <Loading loadingText="Loading projects..." />
           </div>
         )}
       </div>
@@ -110,13 +115,14 @@ const Projects = () => {
       <Popup
         isPopup={isDeletePopup}
         setIsPopup={setIsDeletePopup}
-        actionText={"No"}
+        actionText="No"
         handleAction={() => {
-          setIsDeletePopup(false), setSelectedProjectId(null);
+          setIsDeletePopup(false);
+          setSelectedProjectId(null);
         }}
         handleSecondaryAction={handleDelete}
-        secondaryActiontext={"Yes,Sure"}
-        title={"Are you sure want to delete this project?"}
+        secondaryActiontext="Yes, Sure"
+        title="Are you sure you want to delete this project?"
         subtitle={`This will permanently delete project ID: ${selectedProjectId}`}
         isLoading={isLoading}
         errorMessage={errorMessage}
