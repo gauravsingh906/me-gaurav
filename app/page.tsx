@@ -14,7 +14,7 @@ async function fetchProjectData(): Promise<TProject[]> {
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ?? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
 
-  const res = await fetch(`${baseUrl}/api/project`, {
+  const res = await fetch(`${baseUrl}/api/project?title=Bug-bucket||title=ConfessIt||title=Poke-dex`, {
     next: { revalidate: 3600 },
   });
 
