@@ -42,14 +42,7 @@ const Footer = () => {
       title: "Linkedin",
       link: "https://www.linkedin.com/in/gaurav-singh-3593aa25b/",
     },
-    {
-      title: "Codechef",
-      link: "https://www.codechef.com/users/gauravsingh8xm",
-    },
-    {
-      title: "LeetCode",
-      link: "https://leetcode.com/u/Gaurav200/",
-    },
+    
 
   ];
 
