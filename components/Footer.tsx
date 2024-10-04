@@ -28,10 +28,10 @@ const Footer = () => {
       title: "Contact",
       link: "/contact",
     },
-    {
-      title: "Admin",
-      link: "/dashboard",
-    },
+    // {
+    //   title: "Admin",
+    //   link: "/dashboard",
+    // },
   ];
   const socialLinks = [
     {
